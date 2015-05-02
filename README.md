@@ -5,7 +5,7 @@ Otherwise the script reads from STDIN and writes to STDOUT.
 
 The script can be run on a file like this:
 
-`$ python3 convertbib --input <file>`
+`$ python3 ./convertbibliography.py --input <file>`
 
 The script depends on the [bibtexparser](https://github.com/sciunto/python-bibtexparser) and [titlecase](https://pypi.python.org/pypi/titlecase) modules.
 
