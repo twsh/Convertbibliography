@@ -19,19 +19,23 @@ def fix_keys(l):
     Add dummy keys to those lines.
     Remove spaces from keys.
     >>> fix_keys(
-        ['@book{foo bar,', '@article{\n', '    Author = {Thomas Hodgson}\n', '}\n']
+        ['@book{foo bar,', '@article{', '    Author = {Thomas Hodgson}', '}']
     )
-    ['@book{foobar,', '@article{Foo1,\n', '    Author = {Thomas Hodgson}\n', '}\n']
+    ['@book{foobar,', '@article{Foo1,', '    Author = {Thomas Hodgson}', '}']
     """
     i = 1
     j = 0
     while j < len(l):
-        if re.match('@\\w+{,{0,1}$', l[j].strip()):
-            l[j] = l[j][:l[j].find('{')+1] + 'Foo' + str(i) + ',' + '\n'
+        if re.fullmatch('@\\w+\\s*{,{0,1}', l[j].strip()):
+            l[j] = l[j][:l[j].find('{')+1] + 'Foo' + str(i) + ','
             i += 1
         elif re.match('@', l[j].strip()):
-            # I just want to replace spaces, not newlines
-            l[j] = re.sub(' ', '', l[j])
+            # Find where the key starts
+            start = re.search('{', l[j]).end()
+            # Get rid of any non word characters
+            key = re.sub('\W+', '', l[j][start:])
+            # Put it back together; add a comma which will have been removed
+            l[j] = l[j][:start] + key + ','
         j += 1
     return l
 
@@ -79,15 +83,18 @@ def customizations(record):
     record = cb_customs.empty_fields(record)
     record = cb_customs.remove_protection(record)
     record = cb_customs.active_quotes(record)
+    record = cb_customs.subtitles(record)
+    record = cb_customs.remove_series(record)
     if not args.nodoi:
         try:
             record = cb_customs.get_doi(record)
         # If there is a connection error stop trying to get DOIs
         except cb_customs.requests.exceptions.ConnectionError:
-            print(
-                "I couldn't connect to the CrossRef API. "
-                "Perhaps you are not connected to the internet?"
-            )
+            if args.verbose:
+                print(
+                    "I couldn't connect to the CrossRef API. "
+                    "Perhaps you are not connected to the internet?"
+                )
             args.nodoi = True
     return record
 
@@ -103,36 +110,48 @@ if __name__ == "__main__":
         action='store_true',
         help="Don't look for DOIs from CrossRef"
     )
+    parser.add_argument(
+        '--verbose',
+        dest='verbose',
+        action='store_true',
+        help="Print messages"
+    )
     args = parser.parse_args()
     if args.input:
         bib = args.input
         try:
             shutil.copy(bib, bib + '.backup')
-            print(
-                "I have made a backup of the orignal file at {}.backup"
-                .format(bib)
-            )
+            if args.verbose:
+                print(
+                    "I have made a backup of the orignal file at {}.backup"
+                    .format(bib)
+                )
             with open(bib, 'r', encoding='utf-8') as biblatex:
-                content = biblatex.readlines()
+                content = biblatex.read()
         except FileNotFoundError:
-            print("I couldn't find the file {}.".format(bib))
+            if args.verbose:
+                print("I couldn't find the file {}.".format(bib))
             sys.exit()
     else:
-        content = sys.stdin.readlines()
-    # Is the first line anything other than a new line?
-    # If so, insert one
-    if content[0] != '\n':
-        content.insert(0, '\n')
+        content = sys.stdin.read()
+    # Find the start of the first record
+    try:
+        start = re.search('@', content).start()
+    except AttributeError:
+        if args.verbose:
+            print("The file I was given didn't contain any records.")
+        sys.exit()
+    content = content[start:].split('\n')
     # Provide dummy citekeys
     content = fix_keys(content)
-    fixed_content = ''.join(content)
+    fixed_content = '\n'.join(content)
     bibliography = BibTexParser(
         fixed_content,
         customization=customizations,
         ignore_nonstandard_types=False
         # Otherwise bibtexparser will complain if I give it a collection
     )
-    output = BibTexWriter().write(bibliography).rstrip('\n') + '\n'
+    output = BibTexWriter().write(bibliography)
     if args.input:
         with open(bib, 'w', encoding='utf-8') as biblatex:
             biblatex.write(output)

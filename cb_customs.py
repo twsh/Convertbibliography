@@ -2,38 +2,40 @@ import re
 import requests
 import titlecase
 
+# I doubt if we need to go above ten
+words_to_numerals =\
+    {
+        'first': '1',
+        'second': '2',
+        'third': '3',
+        'fourth': '4',
+        'fifth': '5',
+        'sixth': '6',
+        'seventh': '7',
+        'eighth': '8',
+        'ninth': '9',
+        'tenth': '10'
+    }
 
-def title_name(name):
-    """
-    str -> str
-    Take a name and return it in title case, leaving 'and' alone.
-    >>> title_name('hodgson, thomas')
-    'Hodgson, Thomas'
-    >>> title_name('hodgson, thomas and CHOMSKY, NOAM')
-    'Hodgson, Thomas and Chomsky, Noam'
-    """
-    name =\
-        ' '.join(
-            [x.title() if not re.match('and', x) else x for x in name.split()]
-        )
-    return name
+# Lower case for the sake of comparison
+english_identifiers =\
+    {
+        'american',
+        'australian',
+        'british',
+        'canadian',
+        'english',
+        'newzealand',
+        'ukenglish',
+        'usenglish'
+    }
 
-
-def braces(s):
-    """
-    str -> str
-    Take a string and enclose it in braces ('{', '}'),
-    unless it already has them.
-    >>> braces('foo')
-    '{foo}'
-    >>> braces('{foo}')
-    '{foo}'
-    """
-    if not s.startswith('{'):
-        s = '{' + s
-    if not s.endswith('}'):
-        s = s + '}'
-    return s
+journals_needing_article =\
+    {
+        'Journal of Philosophy',
+        'Philosophical Quarterly',
+        'Philosophical Review'
+    }
 
 
 def remove_outer_braces(s):
@@ -89,45 +91,107 @@ def remove_resolver(doi):
     return re.sub('http://dx.doi.org/', '', doi)
 
 
-# I doubt if we need to go above ten
-words_to_numerals =\
-    {
-        'first': '1',
-        'second': '2',
-        'third': '3',
-        'fourth': '4',
-        'fifth': '5',
-        'sixth': '6',
-        'seventh': '7',
-        'eighth': '8',
-        'ninth': '9',
-        'tenth': '10'
-    }
+def title_name(name):
+    """
+    str -> str
+    Take a name and return it in title case, leaving 'and' alone.
+    >>> title_name('hodgson, thomas')
+    'Hodgson, Thomas'
+    >>> title_name('hodgson, thomas and CHOMSKY, NOAM')
+    'Hodgson, Thomas and Chomsky, Noam'
+    """
+    name =\
+        ' '.join(
+            [x.title() if not re.match('and', x) else x for x in name.split()]
+        )
+    return name
 
-# Lower case for the sake of comparison
-english_identifiers =\
-    {
-        'american',
-        'australian',
-        'british',
-        'canadian',
-        'english',
-        'newzealand',
-        'ukenglish',
-        'usenglish'
-    }
 
-journals_needing_article =\
-    {
-        'Journal of Philosophy',
-        'Philosophical Quarterly',
-        'Philosophical Review'
-    }
+def braces(s):
+    """
+    str -> str
+    Take a string and enclose it in braces ('{', '}'),
+    unless it already has them.
+    >>> braces('foo')
+    '{foo}'
+    >>> braces('{foo}')
+    '{foo}'
+    """
+    if not s.startswith('{'):
+        s = '{' + s
+    if not s.endswith('}'):
+        s = s + '}'
+    return s
+
+
+def remove_series(record):
+    """
+    Remove Series fields.
+
+    :param record: the record.
+    :type record: dict
+    :returns: dict -- the modified record.
+    """
+    if "series" in record:
+        del record["series"]
+    return record
+
+
+def philpapers(record):
+    """
+    Put the PhilPapers ID in a field.
+
+    This function assumes that the ID for the records is a PhilPapers ID.
+
+    :param record: the record.
+    :type record: dict
+    :ret
+    """
+    if re.search('-', record["id"]):
+        # Split into a list at hyphens
+        segments = re.split('-', record["id"])
+        # Check whether we have an ID of the form 'FOOBAR-1'
+        if re.fullmatch('\d+', segments[-1]):
+            ppid = '{}-{}'.format(
+                segments[-2],
+                segments[-1]
+            )
+        else:
+            ppid = segments[-1]
+        record["philpapers"] = ppid
+    return record
+
+
+def subtitles(record):
+    """
+    Put subtitles in.
+
+    :param record: the record.
+    :type record: dict
+    :returns: dict -- the modified record.
+    """
+    if "journaltitle" in record and re.search(':', record["journaltitle"]):
+        m = re.search(':', record["journaltitle"])
+        title = record["journaltitle"][:m.start()].strip()
+        subtitle = record["journaltitle"][m.end():].strip()
+        record["journaltitle"] = title
+        record["journalsubtitle"] = subtitle
+    if "title" in record and re.search(':', record["title"]):
+        m = re.search(':', record["title"])
+        title = record["title"][:m.start()].strip()
+        subtitle = record["title"][m.end():].strip()
+        record["title"] = title
+        record["subtitle"] = subtitle
+    return record
 
 
 def add_definite_to_journaltitles(record):
     """
     Add a definite article ('the') to titles from a specified list.
+
+    :param record: the record.
+    :type record: dict
+    :returns: dict -- the modified record.
     """
     if "journaltitle" in record:
         if record["journaltitle"] in journals_needing_article:

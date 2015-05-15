@@ -5,15 +5,19 @@ Otherwise the script reads from STDIN and writes to STDOUT.
 
 The script can be run on a file like this:
 
-`$ python3 ./convertbibliography.py --input <file>`
+`$ python3 convertbib --input <file>`
 
 The script depends on the [bibtexparser](https://github.com/sciunto/python-bibtexparser) and [titlecase](https://pypi.python.org/pypi/titlecase) modules.
 
 The file `CB_customs.py` contains several functions that are used by bibtexparser.
 These are not all used by my script, but I have left them in the file in case they are useful to somebody.
 
+The script prints messages about what it is doing if it is called with the `--verbose` flag.
+
 The script makes the following changes:
 
+* Author and editor names are put in LastName, FirstName order
+* LaTeX non-ASCII characters are converted to unicode
 * If a record doesn't have a citekey then one is added of the form 'Foo' + a unique numeral
 * Spaces are removed from citekeys
 * Unicode encoding is set
@@ -41,5 +45,7 @@ The script makes the following changes:
 * Keywords are removed
 * Entire fields that are protected have their protection removed
 * Quotes are replaced with an appropriate smart single quote
+* If there is a colon (':') in a 'title' or 'journaltitle' field it is deleted and the string after it is removed and placed in a 'subtitle' or 'journalsubtitle' field as appropriate
+* 'series' fields are removed
 * If an article lacks a doi field then an attempt is made to get one through the CrossRef API (the `--no-doi` option suppresses this)
 
