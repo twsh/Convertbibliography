@@ -7,7 +7,7 @@ The script can be run on a file like this:
 
 `$ python3 ./convertbibliography.py --input <file>`
 
-The script depends on the [bibtexparser](https://github.com/sciunto/python-bibtexparser) and [titlecase](https://pypi.python.org/pypi/titlecase) modules.
+The script depends on the [bibtexparser](https://github.com/sciunto/python-bibtexparser) (0.6.1) and [titlecase](https://pypi.python.org/pypi/titlecase) (0.7.2) modules.
 
 The file `CB_customs.py` contains several functions that are used by bibtexparser.
 These are not all used by my script, but I have left them in the file in case they are useful to somebody.
@@ -48,4 +48,3 @@ The script makes the following changes:
 * If there is a colon (':') in a 'title' or 'journaltitle' field it is deleted and the string after it is removed and placed in a 'subtitle' or 'journalsubtitle' field as appropriate
 * 'series' fields are removed
 * If an article lacks a doi field then an attempt is made to get one through the CrossRef API (the `--no-doi` option suppresses this)
-

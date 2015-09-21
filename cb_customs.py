@@ -147,9 +147,9 @@ def philpapers(record):
     :type record: dict
     :ret
     """
-    if re.search('-', record["id"]):
+    if re.search('-', record["ID"]):
         # Split into a list at hyphens
-        segments = re.split('-', record["id"])
+        segments = re.split('-', record["ID"])
         # Check whether we have an ID of the form 'FOOBAR-1'
         if re.fullmatch('\d+', segments[-1]):
             ppid = '{}-{}'.format(
@@ -201,13 +201,13 @@ def add_definite_to_journaltitles(record):
 
 def remove_pages_from_books_and_collections(record):
     """
-    Remove the 'pages' field from records with type 'incollection' or 'inbook'.
+    Remove the 'pages' field from records with ENTRYTYPE 'incollection' or 'inbook'.
 
     :param record: the record.
     :type record: dict
     :returns: dict -- the modified record.
     """
-    if record["type"] == "incollection" or record["type"] == "inbook":
+    if record["ENTRYTYPE"] == "incollection" or record["ENTRYTYPE"] == "inbook":
         if "pages" in record:
             del record["pages"]
     return record
@@ -308,7 +308,7 @@ def biblatex_page_ranges(record):
         else:
             print(
                 "The 'Pages' field for record {} isn't a valid biblatex range.".format(
-                    record["id"]
+                    record["ID"]
                 )
             )
     return record
@@ -379,7 +379,7 @@ def get_doi(record):
     :type record: dict
     :returns: dict -- the modified record.
     """
-    if record["type"] == "article" and "doi" not in record:
+    if record["ENTRYTYPE"] == "article" and "doi" not in record:
         # Build a search term for the API
         query = ''
         # Build a query
@@ -405,7 +405,7 @@ def get_doi(record):
             print(
                 'I got status code {} from the CrossRef API for record {}.'.format(
                     r.status_code,
-                    record["id"]
+                    record["ID"]
                 )
             )
             # Proceed if the status code was a good one
@@ -419,7 +419,7 @@ def get_doi(record):
                         record["doi"] = doi
                     except (IndexError, KeyError):
                         print("I couldn't find a DOI in the JSON for record {}.".format(
-                            record["id"]
+                            record["ID"]
                             )
                         )
             # This deals with errors caused by encoding problems,
@@ -428,7 +428,7 @@ def get_doi(record):
             except UnicodeEncodeError:
                 print(
                     "I couldn't get a DOI. A character in record {} wasn't encoded in a way the CrossRef API understands.".format(
-                        record["id"]
+                        record["ID"]
                     )
                 )
     return record
@@ -539,7 +539,7 @@ def booktitle(record):
     :type record: dict
     :returns: dict -- the modified record.
     """
-    if record["type"] == "book":
+    if record["ENTRYTYPE"] == "book":
         if "title" in record:
             record["booktitle"] = record["title"]
     return record
@@ -629,14 +629,14 @@ def language(record):
             if record["language"] != record["langid"]:
                 print(
                     "The 'Language' and 'Langid' fields for record {} don't match.".format(
-                        record["id"]
+                        record["ID"]
                     )
                 )
     else:
         if "langid" in record:
             print(
                 "There is a 'Langid' but no 'Language' field for record {} don't match.".format(
-                    record["id"]
+                    record["ID"]
                 )
             )
     return record
@@ -650,7 +650,7 @@ def remove_publisher(record):
     :type record: dict
     :returns: dict -- the modified record.
     """
-    if record["type"] == "article":
+    if record["ENTRYTYPE"] == "article":
         if "publisher" in record:
             del record["publisher"]
     return record
@@ -758,18 +758,18 @@ def protect_capitalisation(record):
 def multivolume(record):
     """
     If a book or collection has a volume number,
-    change its type to mvbook/mvcollection.
+    change its ENTRYTYPE to mvbook/mvcollection.
 
     :param record: the record.
     :type record: dict
     :returns: dict -- the modified record.
     """
-    if record["type"] == "book":
+    if record["ENTRYTYPE"] == "book":
         if "volume" in record:
-            record["type"] = "mvbook"
-    elif record["type"] == "collection":
+            record["ENTRYTYPE"] = "mvbook"
+    elif record["ENTRYTYPE"] == "collection":
         if "volume" in record:
-            record["type"] = "mvcollection"
+            record["ENTRYTYPE"] = "mvcollection"
     return record
 
 
