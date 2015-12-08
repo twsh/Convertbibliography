@@ -82,7 +82,6 @@ def customizations(record):
     record = cb_customs.remove_keyword(record)
     record = cb_customs.empty_fields(record)
     record = cb_customs.remove_protection(record)
-    record = cb_customs.active_quotes(record)
     record = cb_customs.subtitles(record)
     record = cb_customs.remove_series(record)
     if not args.nodoi:
