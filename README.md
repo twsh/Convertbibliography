@@ -48,3 +48,9 @@ The script makes the following changes:
 * If there is a colon (':') in a 'title' or 'journaltitle' field it is deleted and the string after it is removed and placed in a 'subtitle' or 'journalsubtitle' field as appropriate
 * 'series' fields are removed
 * If an article lacks a doi field then an attempt is made to get one through the CrossRef API (the `--no-doi` option suppresses this)
+* 'month' fields are removed
+* 'numpages' fields are removed
+* 'eprint' fields are removed
+* 'year' fields are converted to 'date'
+* 'issue' fields are converted to 'number'
+* 'leading zeroes' are removed from fields with numbers

@@ -17,19 +17,6 @@ words_to_numerals =\
         'tenth': '10'
     }
 
-# Lower case for the sake of comparison
-english_identifiers =\
-    {
-        'american',
-        'australian',
-        'british',
-        'canadian',
-        'english',
-        'newzealand',
-        'ukenglish',
-        'usenglish'
-    }
-
 journals_needing_article =\
     {
         'Journal of Philosophy',
@@ -122,6 +109,75 @@ def braces(s):
     if not s.endswith('}'):
         s = s + '}'
     return s
+
+
+def remove_eprint(record):
+    """
+    Remove Eprint fields.
+
+    :param record: the record.
+    :type record: dict
+    :returns: dict -- the modified record.
+    """
+    if "eprint" in record:
+        del record["eprint"]
+    return record
+
+
+def issue_to_number(record):
+    """
+    If a record has an Issue field which is a number,
+    and doesn't have a number field, replace Issue with Number
+
+    :param record: the record.
+    :type record: dict
+    :returns: dict -- the modified record.
+    """
+    if "issue" in record and "number" not in record and re.fullmatch('\d+', record["issue"]):
+        record["number"] = record["issue"]
+        del record["issue"]
+    return record
+
+
+def remove_leading_zeros(record):
+    """
+    Remove leading zeroes from Volume and Number fields.
+
+    :param record: the record.
+    :type record: dict
+    :returns: dict -- the modified record.
+    """
+    if "volume" in record:
+        record["volume"] = record["volume"].lstrip('0')
+    if "number" in record:
+        record["number"] = record["number"].lstrip('0')
+    return record
+
+
+def remove_numpages(record):
+    """
+    Remove Numpages fields.
+
+    :param record: the record.
+    :type record: dict
+    :returns: dict -- the modified record.
+    """
+    if "numpages" in record:
+        del record["numpages"]
+    return record
+
+
+def remove_month(record):
+    """
+    Remove Month fields.
+
+    :param record: the record.
+    :type record: dict
+    :returns: dict -- the modified record.
+    """
+    if "month" in record:
+        del record["month"]
+    return record
 
 
 def remove_series(record):
@@ -505,7 +561,7 @@ def case_title(record):
     :type record: dict
     :returns: dict -- the modified record.
     """
-    if "language" not in record or record["language"] in english_identifiers:
+    if "language" not in record or record["language"] == 'English':
         if "title" in record:
             record["title"] = titlecase.titlecase(record["title"])
         if "subtitle" in record:
@@ -619,26 +675,19 @@ def language(record):
     :type record: dict
     :returns: dict -- the modified record.
     """
-    if "language" in record:
-        if record["language"].lower() in english_identifiers:
-            del record["language"]
-    if "language" in record:
-        if "langid" not in record:
-            record["langid"] = record["language"].lower()
-        else:
-            if record["language"] != record["langid"]:
-                print(
-                    "The 'Language' and 'Langid' fields for record {} don't match.".format(
-                        record["ID"]
-                    )
-                )
-    else:
+    if "language" in record and record["language"] == 'English':
+        del record["language"]
         if "langid" in record:
-            print(
-                "There is a 'Langid' but no 'Language' field for record {} don't match.".format(
-                    record["ID"]
-                )
+            del record["langid"]
+    elif "language" in record:
+        record["langid"] = record["language"].lower()
+    elif "langid" in record:
+        print(
+            "There is a 'Langid' of '{}'' but no 'Language' field for record {}.".format(
+                record["langid"],
+                record["ID"]
             )
+        )
     return record
 
 
@@ -698,12 +747,15 @@ def escape_characters(record):
     """
     list_of_characters = ['&', '%', '_']
     for val in record:
-        for c in list_of_characters:
-            record[val] = re.sub(
-                '(?<!\\\\){}'.format(c),
-                '\{}'.format(c),
-                record[val]
-            )
+        # Underscores are ok in IDs, which shouldn't have other special
+        # characters anyway
+        if val != "ID":
+            for c in list_of_characters:
+                record[val] = re.sub(
+                    '(?<!\\\\){}'.format(c),
+                    '\{}'.format(c),
+                    record[val]
+                )
     return record
 
 
@@ -783,4 +835,18 @@ def remove_booktitle(record):
     """
     if "booktitle" in record:
         del record["booktitle"]
+    return record
+
+
+def year_to_date(record):
+    """
+    Turn 'year' fields into 'date'.
+
+    :param record: the record.
+    :type record: dict
+    :returns: dict -- the modified record.
+    """
+    if "year" in record:
+        record["date"] = record["year"]
+        del record["year"]
     return record

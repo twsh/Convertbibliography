@@ -49,6 +49,7 @@ def customizations(record):
     # This needs to come before authors are dealt with
     # otherwise there are encoding problems
     record = convert_to_unicode(record)
+    record = page_double_hyphen(record)
     record = author(record)
     record = editor(record)
     # This is needed after `author` is called to allow writing
@@ -84,6 +85,13 @@ def customizations(record):
     record = cb_customs.remove_protection(record)
     record = cb_customs.subtitles(record)
     record = cb_customs.remove_series(record)
+    record = cb_customs.remove_month(record)
+    record = cb_customs.remove_numpages(record)
+    record = cb_customs.remove_eprint(record)
+    record = cb_customs.year_to_date(record)
+    # The order of the following matters
+    record = cb_customs.issue_to_number(record)
+    record = cb_customs.remove_leading_zeros(record)
     if not args.nodoi:
         try:
             record = cb_customs.get_doi(record)
